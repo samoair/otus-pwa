@@ -3,10 +3,8 @@
     <q-header elevated>
       <q-toolbar>
         <q-btn flat dense round icon="menu" aria-label="Меню" @click="toggleLeftDrawer" />
-        <q-toolbar-title> OTUS PWA — ДЗ 1 </q-toolbar-title>
-        <q-badge color="white" text-color="primary" class="text-body2">
-          v{{ version }}
-        </q-badge>
+        <q-toolbar-title> OTUS PWA </q-toolbar-title>
+        <q-badge color="white" text-color="primary" class="text-body2"> v{{ version }} </q-badge>
       </q-toolbar>
     </q-header>
 
@@ -17,9 +15,7 @@
     -->
     <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
       <q-list>
-        <q-item-label header class="text-weight-bold text-grey-8">
-          Навигация
-        </q-item-label>
+        <q-item-label header class="text-weight-bold text-grey-8"> Навигация </q-item-label>
 
         <!--
           v-for пробегает по массиву navLinks.
@@ -27,13 +23,7 @@
           это декларативный способ навигации через vue-router.
           v-ripple — материальный эффект нажатия (Quasar директива).
         -->
-        <q-item
-          v-for="link in navLinks"
-          :key="link.to"
-          :to="link.to"
-          clickable
-          v-ripple
-        >
+        <q-item v-for="link in navLinks" :key="link.to" :to="link.to" clickable v-ripple>
           <q-item-section avatar>
             <q-icon :name="link.icon" />
           </q-item-section>
