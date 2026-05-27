@@ -1,12 +1,38 @@
 # otus-pwa
+ДЗ для курса OTUS Vue.js
 
-ДЗ №1 для курса OTUS Vue.js. Разворачиваем проект с нуля через Vite.
+## ДЗ 1: Настройка проекта с Vite
 
-## Что внутри
+Quasar-приложение на Vite с TypeScript. В `quasar.config.ts` каждая настройка прокомментирована — что она делает и как соотносится с обычным `vite.config`.
 
-Quasar-приложение на Vite с TypeScript. Без лишних наворотов — ровно столько, чтобы показать, что я разбираюсь в настройках сборки и умею пользоваться Composition API, а не прятаться за Options API.
+- **quasar.config.ts** — каждая настройка с комментарием на русском.
+- **src/components/CounterComponent.vue** — `ref()` и `computed()` на локальном счётчике.
+- **src/components/TaskList.vue** — реактивные массивы, фильтрация через `computed()`.
+- **src/stores/counter-store.ts** — Pinia-стор в setup-стиле.
+- **src/pages/AboutPage.vue** — преимущества Vite, конфиг приложения.
 
-В `quasar.config.ts` каждая настройка прокомментирована — что она делает и как соотносится с обычным `vite.config`. Это основная часть домашки.
+## ДЗ 2: Директивы Vue
+
+Страница `/users` — список сотрудников, демонстрирующий все основные директивы:
+
+- **v-for** — карточки пользователей
+- **v-if / v-else-if / v-else** — возраст, категория по возрасту
+- **v-show** — email (для сравнения с v-if)
+- **v-bind** (`:class`, `:style`, `:color`) — подсветка при наведении, статус, аватар
+- **v-on** (`@click`, `@mouseenter`, `@mouseleave`, `@keyup.enter`) — скрытие списка, hover, поиск
+- **v-html** — биография сотрудника с разметкой
+
+Каждая директива выделена в отдельный блок с объяснением на русском. Внизу страницы — справочная таблица и описание цикла VirtualDOM.
+
+## Vapor Mode (живое сравнение)
+
+Страница `/vapor` — реальный бенчмарк VDOM vs Vapor на **Vue 3.6.0-beta.12**:
+
+- **BenchVdom.vue** — `<script setup>` — обычный режим (VNode + diff)
+- **BenchVapor.vue** — `<script setup vapor>` — прямые DOM-операции
+- Один и тот же composable `useBenchmark` — разница только в компиляции
+- Таблица сравнения: создание, обновление 1, обновление всех, перемешивание
+- Код компонентов показан рядом — разница в одном слове `vapor`
 
 ## Запуск
 
@@ -16,15 +42,6 @@ npm run dev        # дев-сервер с HMR
 npm run build      # продакшн-сборка
 ```
 
-## Где смотреть
-
-- **quasar.config.ts** — каждая настройка с комментарием на русском. Здесь живёт Vite внутри Quasar-проекта.
-- **src/components/CounterComponent.vue** — `ref()` и `computed()` на локальном счётчике, подробно закомментировано.
-- **src/components/TaskList.vue** — реактивные массивы, фильтрация через `computed()`, v-for с :key.
-- **src/stores/counter-store.ts** — Pinia-стор в setup-стиле (не options). Под капотом `ref` и `computed`.
-- **src/pages/AboutPage.vue** — преимущества Vite, структура конфига, Composition API.
-- **src/pages/VaporModePage.vue** — интерактивный бенчмарк производительности. Сравнение VDOM vs Vapor Mode с замерами времени, официальными метриками из RFC Vue (-65% бандл, ×1.66 скорость, -42% память), примерами синтаксиса `<script setup vapor>` и ограничениями.
-
 ## Стек
 
-Vue 3 · Quasar 2 · Vite · TypeScript · Pinia
+Vue 3.6.0-beta.12 · Quasar 2 · Vite · TypeScript · Pinia

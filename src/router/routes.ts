@@ -20,6 +20,11 @@ const routes: RouteRecordRaw[] = [
         name: 'vapor',
         component: () => import('pages/VaporModePage.vue'),
       },
+      {
+        path: 'users',
+        name: 'users',
+        component: () => import('pages/UsersPage.vue'),
+      },
     ],
   },
   {
