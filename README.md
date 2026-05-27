@@ -1,5 +1,5 @@
 # otus-pwa
-ДЗ №2 для курса OTUS Vue.js.
+ДЗ для курса OTUS Vue.js
 
 ## ДЗ 1: Настройка проекта с Vite
 
