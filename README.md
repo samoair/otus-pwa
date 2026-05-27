@@ -24,6 +24,15 @@ Quasar-приложение на Vite с TypeScript. В `quasar.config.ts` ка�
 
 Каждая директива выделена в отдельный блок с объяснением на русском. Внизу страницы — справочная таблица и описание цикла VirtualDOM.
 
+## ДЗ 3: Главная страница магазина
+
+Страница `/products` — каталог товаров с fakestoreapi.com, демонстрирующий Composition API и composables:
+
+- **useProducts** — composable (custom hook): `ref()` (products, loading, error), `reactive()` (фильтры), `computed()` (filteredProducts, categories, totalPrice), `onMounted()` (загрузка), `onUnmounted()` (cleanup)
+- **ProductCard** — дочерний компонент: `defineProps`, `defineEmits`, `v-bind` (динамический стиль цены, класс категории), `v-show` (описание), `v-html` (HTML-описание товара)
+- **ProductsPage** — `v-if` для состояний загрузка/ошибка/пусто, `v-for` список, `v-show` корзина, «props down, events up»
+- **ProductService** — класс-сервис с fetch (по паттерну pms-pwa)
+
 ## Vapor Mode (живое сравнение)
 
 Страница `/vapor` — реальный бенчмарк VDOM vs Vapor на **Vue 3.6.0-beta.12**:

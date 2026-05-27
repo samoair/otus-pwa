@@ -59,6 +59,7 @@ function toggleLeftDrawer() {
 // потому что изменений не будет.
 const navLinks = [
   { to: '/', label: 'Главная', icon: 'home' },
+  { to: '/products', label: 'Каталог', icon: 'storefront' },
   { to: '/users', label: 'Пользователи', icon: 'people' },
   { to: '/about', label: 'О проекте', icon: 'info' },
   { to: '/vapor', label: 'Vapor Mode', icon: 'speed' },
