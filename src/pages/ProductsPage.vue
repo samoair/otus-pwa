@@ -1,5 +1,5 @@
 <!--
-  ProductsPage.vue — ДЗ 3: главная страница магазина.
+  ProductsPage.vue — ДЗ 3 + ДЗ 4: главная страница магазина.
 
   Демонстрирует:
   - ref, reactive, computed — через composable useProducts
@@ -11,12 +11,18 @@
   - v-show — видимость корзины
   - v-html — описание товара (в ProductCard)
   - v-on — обработка событий
+  - ДЗ 4: поиск по цене, кнопка «Оформить заказ», создание товара
 
   Vapor Mode: совместим. <script setup vapor lang="ts">
 -->
 <template>
   <q-page padding>
-    <div class="text-h4 q-mb-md">Каталог товаров</div>
+    <div class="row items-center q-mb-md">
+      <div class="text-h4">Каталог товаров</div>
+      <q-space />
+      <!-- ДЗ 4: кнопка создания нового товара -->
+      <ProductFormDialog @created="onProductCreated" />
+    </div>
 
     <!-- ============================================================
          ФИЛЬТРЫ — используют reactive() из composable
@@ -25,7 +31,7 @@
       <q-card-section>
         <div class="row q-col-gutter-sm items-end">
           <!-- Поиск — v-model связан с reactive-свойством -->
-          <div class="col-12 col-md-4">
+          <div class="col-12 col-md-3">
             <q-input
               v-model="filters.searchQuery"
               dense
@@ -40,7 +46,7 @@
           </div>
 
           <!-- Категория — v-model на reactive -->
-          <div class="col-12 col-md-3">
+          <div class="col-12 col-md-2">
             <q-select
               v-model="filters.category"
               :options="['', ...categories]"
@@ -62,6 +68,30 @@
                 </q-item>
               </template>
             </q-select>
+          </div>
+
+          <!-- ДЗ 4: Фильтр по цене — мин -->
+          <div class="col-6 col-md-1">
+            <q-input
+              v-model.number="filters.priceMin"
+              dense
+              outlined
+              type="number"
+              label="Цена от"
+              clearable
+            />
+          </div>
+
+          <!-- ДЗ 4: Фильтр по цене — макс -->
+          <div class="col-6 col-md-1">
+            <q-input
+              v-model.number="filters.priceMax"
+              dense
+              outlined
+              type="number"
+              label="Цена до"
+              clearable
+            />
           </div>
 
           <!-- Сортировка -->
@@ -134,10 +164,20 @@
           <q-card-section class="row items-center">
             <q-icon name="shopping_cart" color="primary" size="sm" class="q-mr-sm" />
             <span class="text-body2">
-              В корзине: <strong>{{ cartItems.length }}</strong> товар(ов) · Сумма:
-              <strong>${{ cartTotal.toFixed(2) }}</strong>
+              В корзине: <strong>{{ cartItems.length }}</strong> товар(ов)
+              · Сумма: <strong>${{ cartTotal.toFixed(2) }}</strong>
             </span>
             <q-space />
+            <!-- ДЗ 4: кнопка перехода к оформлению заказа -->
+            <q-btn
+              flat
+              dense
+              color="positive"
+              label="Оформить заказ"
+              icon="shopping_bag"
+              to="/order"
+              class="q-mr-sm"
+            />
             <q-btn flat dense color="negative" label="Очистить" @click="cartItems = []" />
           </q-card-section>
         </q-card>
@@ -170,6 +210,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import ProductCard from 'components/ProductCard.vue';
+import ProductFormDialog from 'components/ProductFormDialog.vue';
 
 // ============================================================
 // CUSTOM HOOK (composable) — основа переиспользуемой логики
@@ -184,6 +225,7 @@ import ProductCard from 'components/ProductCard.vue';
 // - lifecycle (onMounted/onUnmounted внутри composable)
 // ============================================================
 import { useProducts } from 'src/composables/useProducts';
+import type { Product } from 'src/services/product/productModels';
 
 const {
   products,
@@ -217,6 +259,21 @@ function handleToggleCart(productId: number) {
   } else {
     cartItems.value.splice(index, 1);
   }
+}
+
+// ДЗ 4: обработчик создания нового товара
+// fakestoreapi возвращает товар с id — добавляем в список
+function onProductCreated(product: { id?: number; title: string; price: number; description: string; category: string; image: string }) {
+  const newProduct: Product = {
+    id: product.id ?? Date.now(),
+    title: product.title,
+    price: product.price,
+    description: product.description,
+    category: product.category,
+    image: product.image,
+    rating: { rate: 0, count: 0 },
+  };
+  products.value.unshift(newProduct);
 }
 
 // Опции для сортировки — статический массив (не реактивный)

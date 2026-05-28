@@ -33,4 +33,21 @@ export default class ProductService {
     }
     return response.json();
   }
+
+  /**
+   * POST /products — создать новый товар (ДЗ 4).
+   * fakestoreapi не сохраняет данные реально, но возвращает
+   * объект с присвоенным id — этого достаточно для демонстрации.
+   */
+  async create(product: Omit<Product, 'id' | 'rating'>): Promise<Product> {
+    const response = await fetch(`${this.baseUrl}/products`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(product),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    return response.json();
+  }
 }
