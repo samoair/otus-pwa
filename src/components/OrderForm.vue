@@ -346,7 +346,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { Form, Field, useForm } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
 import { z } from 'zod';
@@ -354,6 +354,49 @@ import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import type { OrderFormData, Product } from 'src/services/product/productModels';
 import OrderService from 'src/services/order/orderService';
+
+// ============================================================
+// PERSISTENCE — сохранение формы в localStorage.
+// Форма из 4 шагов — обидно потерять данные при уходе со страницы.
+// Сохраняем при каждом изменении, восстанавливаем при возврате.
+// ============================================================
+const STORAGE_KEY = 'otus-pwa-order-form';
+const STORAGE_STEP_KEY = 'otus-pwa-order-step';
+
+interface SavedForm {
+  fio: string;
+  email: string;
+  phone: string;
+  birthDate: string;
+  country: string;
+  address: { city: string; street: string; house: string; apartment: string };
+  payment: { cardHolder: string; cardNumber: string; expiry: string; cvv: string };
+  agreeTerms: boolean;
+}
+
+function saveForm(values: SavedForm) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(values));
+}
+
+function loadForm(): SavedForm | null {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (!saved) return null;
+  try { return JSON.parse(saved); } catch { return null; }
+}
+
+function clearForm() {
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(STORAGE_STEP_KEY);
+}
+
+function saveStep(s: number) {
+  localStorage.setItem(STORAGE_STEP_KEY, String(s));
+}
+
+function loadStep(): number {
+  const s = localStorage.getItem(STORAGE_STEP_KEY);
+  return s ? Math.min(Math.max(Number(s), 1), 4) : 1;
+}
 
 // ============================================================
 // Props — товары в корзине (передаются от родителя)
@@ -395,18 +438,20 @@ const orderSchema = z.object({
 // Тип выводится из Zod-схемы — единый источник истины
 type OrderSchemaType = z.infer<typeof orderSchema>;
 
-// Начальные значения формы — все поля пустые
-// agreeTerms: false приводится к типу true чтобы обойти Zod literal
-const orderInitialValues = {
-  fio: '',
-  email: '',
-  phone: '',
-  birthDate: '',
-  country: '',
-  address: { city: '', street: '', house: '', apartment: '' },
-  payment: { cardHolder: '', cardNumber: '', expiry: '', cvv: '' },
-  agreeTerms: false as unknown as true,
-};
+// Начальные значения: из localStorage если есть, иначе пустые
+const savedForm = loadForm();
+const orderInitialValues = savedForm
+  ? { ...savedForm, agreeTerms: (savedForm.agreeTerms || false) as unknown as true }
+  : {
+      fio: '',
+      email: '',
+      phone: '',
+      birthDate: '',
+      country: '',
+      address: { city: '', street: '', house: '', apartment: '' },
+      payment: { cardHolder: '', cardNumber: '', expiry: '', cvv: '' },
+      agreeTerms: false as unknown as true,
+    };
 
 // ============================================================
 // useForm — хук vee-validate для управления формой.
@@ -426,9 +471,22 @@ const countries = [
   { label: 'Другая', value: 'OTHER' },
 ];
 
-// Локальное состояние
-const step = ref(1);
+// Локальное состояние — шаг восстанавливается из localStorage
+const step = ref(loadStep());
 const submitting = ref(false);
+
+// ============================================================
+// watch — автосохранение формы при каждом изменении.
+// deep: true — отслеживает вложенные изменения (address.city и т.д.).
+// Даже если пользователь заполнил только шаг 1 и ушёл — данные сохранятся.
+// ============================================================
+watch(values, (v) => {
+  saveForm(v as unknown as SavedForm);
+}, { deep: true });
+
+watch(step, (s) => {
+  saveStep(s);
+});
 
 // Итоговая стоимость корзины — computed (производное от props)
 const cartTotal = computed(() =>
@@ -491,6 +549,9 @@ async function submitOrder() {
     // POST на httpbin.org — echo-сервер вернёт отправленные данные
     const response = await service.submitOrder(orderData);
     console.log('Ответ httpbin.org:', response);
+
+    // Заказ отправлен — очищаем сохранённую форму
+    clearForm();
 
     // Уведомление об успехе — Quasar Notify plugin
     $q.notify({
