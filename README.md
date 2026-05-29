@@ -33,6 +33,16 @@ Quasar-приложение на Vite с TypeScript. В `quasar.config.ts` ка�
 - **ProductsPage** — `v-if` для состояний загрузка/ошибка/пусто, `v-for` список, `v-show` корзина, «props down, events up»
 - **ProductService** — класс-сервис с fetch (по паттерну pms-pwa)
 
+## ДЗ 4: Формы и работа с API
+
+Страница `/order` — оформление заказа с валидацией, страница `/products` — расширенный поиск и создание товара:
+
+- **OrderForm** — пошаговая форма (Stepper): ФИО, email, телефон, дата рождения, адрес (страна/город/улица/дом), данные карты. Валидация через **vee-validate + zod**, отправка на echo-сервер **httpbin.org/post**, уведомление и редирект на главную
+- **ProductFormDialog** — диалог создания нового товара (POST на fakestoreapi), валидация через vee-validate + zod
+- **ProductSearch** — расширенные фильтры: поиск по названию, диапазон цен, категория, сортировка
+- **OrderService** — класс-сервис для POST-запросов к httpbin.org
+- **ProductService.create()** — POST нового товара к fakestoreapi
+
 ## Vapor Mode (живое сравнение)
 
 Страница `/vapor` — реальный бенчмарк VDOM vs Vapor на **Vue 3.6.0-beta.12**:

@@ -267,6 +267,47 @@ defineExpose({ items, generate, updateOne,
               </q-item-label>
             </q-item-section>
           </q-item>
+
+          <q-item>
+            <q-item-section avatar>
+              <q-icon color="negative" name="science" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>VDOM может быть быстрее на бенчмарках — это нормально для beta</q-item-label>
+              <q-item-label caption>
+                На реальных замерах (1000 элементов) VDOM часто быстрее при
+                <strong>создании</strong> и <strong>массовом обновлении</strong>.
+                Причина: Vapor Mode (3.6 beta) пока не оптимизирован для
+                начального рендеринга — создание DOM-узлов через
+                <code>createElement</code> + <code>setTextContent</code>
+                может быть медленнее batch-VNode→DOM в VDOM-режиме,
+                где Vue использует <code>innerHTML</code> и фрагменты.
+                Зато Vapor показывает <strong>сопоставимые или лучшие</strong>
+                результаты при точечных обновлениях (updateOne) —
+                именно для этого он и спроектирован.
+                Stable-релиз оптимизирует и создание тоже.
+              </q-item-label>
+            </q-item-section>
+          </q-item>
+
+          <q-item>
+            <q-item-section avatar>
+              <q-icon color="info" name="bug_report" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>Известные проблемы Vue 3.6 beta</q-item-label>
+              <q-item-label caption>
+                В dev-режиме Vapor renderEffect вызывает
+                <code>performance.measure()</code> с mark'ами,
+                которые не всегда существуют — приводило к SyntaxError
+                и падению рендера. В этом проекте исправлено через
+                <code>vaporInteropPlugin</code> (boot/vapor-interop.ts)
+                и патч <code>performance.measure</code>.
+                Это демонстрирует, что beta-ПО требует
+                дополнительных усилий по интеграции.
+              </q-item-label>
+            </q-item-section>
+          </q-item>
         </q-list>
       </q-card-section>
     </q-card>

@@ -45,6 +45,8 @@ export function useProducts() {
     searchQuery: '',   // поиск по названию
     sortBy: 'default', // default | price-asc | price-desc | rating
     showDetails: false, // показывать ли описание (v-show)
+    priceMin: null as number | null,  // ДЗ 4: минимальная цена
+    priceMax: null as number | null,  // ДЗ 4: максимальная цена
   });
 
   // ============================================================
@@ -75,6 +77,14 @@ export function useProducts() {
           p.title.toLowerCase().includes(q) ||
           p.description.toLowerCase().includes(q),
       );
+    }
+
+    // ДЗ 4: фильтр по диапазону цен
+    if (filters.priceMin !== null) {
+      result = result.filter((p) => p.price >= (filters.priceMin ?? 0));
+    }
+    if (filters.priceMax !== null) {
+      result = result.filter((p) => p.price <= (filters.priceMax ?? Infinity));
     }
 
     // Сортировка
@@ -124,6 +134,8 @@ export function useProducts() {
     filters.category = '';
     filters.searchQuery = '';
     filters.sortBy = 'default';
+    filters.priceMin = null;
+    filters.priceMax = null;
   }
 
   // ============================================================
