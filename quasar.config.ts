@@ -17,7 +17,7 @@ export default configure((/* ctx */) => {
     // Выполняются до монтирования приложения, в порядке массива.
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
     // ============================================================
-    boot: ['pinia'],
+    boot: ['pinia', 'vapor-interop'],
 
     // ============================================================
     // CSS — глобальные стили, подключаемые к сборке
@@ -71,19 +71,13 @@ export default configure((/* ctx */) => {
       // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#build
       // ============================================================
       extendViteConf(viteConf) {
-        // Пример: добавление кастомных алиасов путей
-        // viteConf.resolve = viteConf.resolve || {};
-        // viteConf.resolve.alias = {
-        //   ...viteConf.resolve.alias,
-        //   '@components': '/src/components',
-        // };
-
-        // Пример: настройка сервера (аналог server в vite.config)
-        // viteConf.server = {
-        //   ...viteConf.server,
-        //   port: 3000,
-        //   open: true,
-        // };
+        // Отключаем Vue perf-метрики — в Vapor Mode (beta)
+        // performance.measure() падает на несуществующих mark'ах.
+        // В продакшн-сборке __VUE_PERF__ уже false.
+        viteConf.define = {
+          ...viteConf.define,
+          __VUE_PERF__: false,
+        };
       },
 
       // ============================================================

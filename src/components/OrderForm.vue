@@ -441,13 +441,13 @@ const $q = useQuasar();
 
 // ============================================================
 // Пошаговая валидация — проверяем только поля текущего шага.
-// validate() возвращает { valid, errors } — мы смотрим
-// есть ли ошибки в полях текущего шага.
+// validate() запускает ВСЕ правила, но valid будет false,
+// если пусты поля на следующих шагах (которые ещё не заполнены).
+// Поэтому проверяем только errors по полям текущего шага.
 // ============================================================
 async function validateAndNext(currentStep: number) {
-  const { valid } = await validate();
+  await validate();
 
-  // Поля каждого шага — если в них есть ошибки, не переходим
   const stepFields: Record<number, string[]> = {
     1: ['fio', 'email', 'phone', 'birthDate'],
     2: ['country', 'address.city', 'address.street', 'address.house'],
@@ -457,7 +457,7 @@ async function validateAndNext(currentStep: number) {
   const fields = stepFields[currentStep] ?? [];
   const hasStepErrors = fields.some((f) => errors.value[f]);
 
-  if (!hasStepErrors && valid) {
+  if (!hasStepErrors) {
     step.value = currentStep + 1;
   }
 }
