@@ -44,10 +44,14 @@
         ${{ product.price.toFixed(2) }}
       </div>
 
-      <!-- Название — обрезаем длинный текст через CSS line-clamp -->
-      <div class="text-subtitle2 text-grey-9" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden">
+      <!-- Название — router-link на страницу товара (ДЗ 5) -->
+      <router-link
+        :to="{ name: 'product-detail', params: { id: product.id } }"
+        class="text-subtitle2 text-grey-9"
+        style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-decoration: none"
+      >
         {{ product.title }}
-      </div>
+      </router-link>
 
       <!-- v-bind:class — категория с цветовой кодировкой -->
       <q-badge

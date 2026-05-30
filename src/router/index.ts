@@ -20,5 +20,29 @@ export default route(function () {
     history: createHistory(process.env.VUE_ROUTER_BASE),
   });
 
+  // ============================================================
+  // Navigation guard (ДЗ 5) — beforeEach hook.
+  //
+  // Проверяет meta.requiresAuth на целевом маршруте.
+  // Если флаг установлен — проверяем localStorage.
+  // Если пользователь не авторизован → redirect на /login.
+  //
+  // record.meta проверяется на всём пути (включая parents),
+  // поэтому guard сработает и для дочерних маршрутов /admin/*.
+  // ============================================================
+  Router.beforeEach((to, _from, next) => {
+    if (to.matched.some((record) => record.meta.requiresAuth)) {
+      const isAuthenticated = localStorage.getItem('otus-pwa-auth') === 'true';
+      if (!isAuthenticated) {
+        // redirect с query-параметром — после логина вернём обратно
+        next({ name: 'login', query: { redirect: to.fullPath } });
+      } else {
+        next();
+      }
+    } else {
+      next();
+    }
+  });
+
   return Router;
 });

@@ -60,7 +60,9 @@ function toggleLeftDrawer() {
 const navLinks = [
   { to: '/', label: 'Главная', icon: 'home' },
   { to: '/products', label: 'Каталог', icon: 'storefront' },
-  { to: '/order', label: 'Заказ', icon: 'shopping_cart' },
+  { to: '/cart', label: 'Корзина', icon: 'shopping_cart' },
+  { to: '/order', label: 'Заказ', icon: 'shopping_bag' },
+  { to: '/login', label: 'Админ', icon: 'admin_panel_settings' },
   { to: '/users', label: 'Пользователи', icon: 'people' },
   { to: '/about', label: 'О проекте', icon: 'info' },
   { to: '/vapor', label: 'Vapor Mode', icon: 'speed' },

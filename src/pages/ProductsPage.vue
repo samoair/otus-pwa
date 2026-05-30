@@ -159,26 +159,17 @@
     <!-- Состояние 4: Список товаров — v-for -->
     <template v-else>
       <!-- Корзина — v-show (всегда в DOM, переключается display) -->
-      <div v-show="cartItems.length > 0" class="q-mb-md">
+      <div v-show="cartStore.totalItems > 0" class="q-mb-md">
         <q-card flat bordered class="bg-blue-1">
           <q-card-section class="row items-center">
             <q-icon name="shopping_cart" color="primary" size="sm" class="q-mr-sm" />
             <span class="text-body2">
-              В корзине: <strong>{{ cartItems.length }}</strong> товар(ов)
-              · Сумма: <strong>${{ cartTotal.toFixed(2) }}</strong>
+              В корзине: <strong>{{ cartStore.totalItems }}</strong> товар(ов)
+              · Сумма: <strong>${{ cartStore.totalPrice.toFixed(2) }}</strong>
             </span>
             <q-space />
-            <!-- ДЗ 4: кнопка перехода к оформлению заказа -->
-            <q-btn
-              flat
-              dense
-              color="positive"
-              label="Оформить заказ"
-              icon="shopping_bag"
-              to="/order"
-              class="q-mr-sm"
-            />
-            <q-btn flat dense color="negative" label="Очистить" @click="cartItems = []" />
+            <q-btn flat dense color="positive" label="Корзина" icon="shopping_cart" :to="{ name: 'cart' }" class="q-mr-sm" />
+            <q-btn flat dense color="negative" label="Очистить" @click="cartStore.clearCart()" />
           </q-card-section>
         </q-card>
       </div>
@@ -198,7 +189,7 @@
           -->
           <ProductCard
             :product="product"
-            :in-cart="cartItems.includes(product.id)"
+            :in-cart="cartStore.isInCart(product.id)"
             @toggle-cart="handleToggleCart"
           />
         </div>
@@ -212,19 +203,8 @@ import { ref, computed } from 'vue';
 import ProductCard from 'components/ProductCard.vue';
 import ProductFormDialog from 'components/ProductFormDialog.vue';
 
-// ============================================================
-// CUSTOM HOOK (composable) — основа переиспользуемой логики
-//
-// useProducts() возвращает реактивное состояние и методы.
-// Мы деструктурируем только нужное — остальное не используется.
-// Composable инкапсулирует:
-// - загрузку данных (fetch)
-// - состояние (loading, error, products)
-// - фильтры (reactive)
-// - производные данные (computed)
-// - lifecycle (onMounted/onUnmounted внутри composable)
-// ============================================================
 import { useProducts } from 'src/composables/useProducts';
+import { useCartStore } from 'src/stores/cart-store';
 import type { Product } from 'src/services/product/productModels';
 
 const {
@@ -239,25 +219,17 @@ const {
   resetFilters,
 } = useProducts();
 
-// ============================================================
-// Корзина — локальное состояние страницы (ref)
-// В реальном приложении корзина была бы в Pinia store
-// (как user-store в pms-pwa)
-// ============================================================
-const cartItems = ref<number[]>([]);
-
-// computed — общая стоимость товаров в корзине
-const cartTotal = computed(() =>
-  products.value.filter((p) => cartItems.value.includes(p.id)).reduce((sum, p) => sum + p.price, 0),
-);
+// ДЗ 5: корзина — общий Pinia store (а не локальный ref)
+const cartStore = useCartStore();
 
 // Обработчик события от ProductCard (v-on → emit)
 function handleToggleCart(productId: number) {
-  const index = cartItems.value.indexOf(productId);
-  if (index === -1) {
-    cartItems.value.push(productId);
+  const product = products.value.find((p) => p.id === productId);
+  if (!product) return;
+  if (cartStore.isInCart(productId)) {
+    cartStore.removeFromCart(productId);
   } else {
-    cartItems.value.splice(index, 1);
+    cartStore.addToCart(product);
   }
 }
 

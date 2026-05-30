@@ -43,6 +43,18 @@ Quasar-приложение на Vite с TypeScript. В `quasar.config.ts` ка�
 - **OrderService** — класс-сервис для POST-запросов к httpbin.org
 - **ProductService.create()** — POST нового товара к fakestoreapi
 
+## ДЗ 5: Vue Router
+
+Роутинг, параметры, guards, children routes, общая корзина:
+
+- **router params** — `/products/:id`, `useRoute().params.id`, загрузка товара из API
+- **children routes** — `/admin` → `AdminLayout` с `<router-view>` → дочерние `/admin` и `/admin/new`
+- **navigation guard** — `beforeEach` проверяет `localStorage` перед входом в `/admin`, неавторизованных перенаправляет на `/login`
+- **LoginPage** — логин/пароль, валидация, установка флага auth, redirect обратно
+- **CartStore** (Pinia) — общая корзина: addToCart с quantity, removeFromCart, clearCart, totalItems/totalPrice
+- **CartPage** `/cart` — список с +/- quantity, удаление, очистка, ссылка на чекаут
+- **ProductDetailPage** `/products/:id` — полная информация о товаре, хлебные крошки, добавить в корзину
+
 ## Vapor Mode (живое сравнение)
 
 Страница `/vapor` — реальный бенчмарк VDOM vs Vapor на **Vue 3.6.0-beta.12**:
