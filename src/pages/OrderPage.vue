@@ -1,10 +1,9 @@
 <!--
-  OrderPage.vue — ДЗ 4: страница оформления заказа.
+  OrderPage.vue — ДЗ 4-5: страница оформления заказа.
 
   Демонстрирует:
+  - Pinia store — общие данные корзины
   - props → events — передача данных между компонентами
-  - composable — useProducts для данных корзины
-  - Quasar layout — страница с заголовком и формой
   - v-if — состояние пустой корзины / форма заказа
 -->
 <template>
@@ -12,11 +11,11 @@
     <div class="text-h4 q-mb-md">Оформление заказа</div>
 
     <!-- Пустая корзина — v-if -->
-    <div v-if="cartItems.length === 0" class="text-center q-pa-xl">
+    <div v-if="cartStore.items.length === 0" class="text-center q-pa-xl">
       <q-icon name="shopping_cart" size="64px" color="grey-5" />
       <div class="text-h6 text-grey q-mt-md">Корзина пуста</div>
       <div class="text-body2 text-grey-7 q-mb-md">Добавьте товары в каталоге</div>
-      <q-btn color="primary" label="Перейти в каталог" to="/products" />
+      <q-btn color="primary" label="Перейти в каталог" :to="{ name: 'products' }" />
     </div>
 
     <!-- Форма заказа — показывает данные корзины -->
@@ -37,11 +36,11 @@
         <q-card-section class="row items-center">
           <q-icon name="shopping_cart" color="primary" class="q-mr-sm" />
           <span class="text-body2">
-            В корзине: <strong>{{ cartItems.length }}</strong> товар(ов)
-            · Сумма: <strong class="text-primary">${{ cartTotal.toFixed(2) }}</strong>
+            В корзине: <strong>{{ cartStore.totalItems }}</strong> товар(ов)
+            · Сумма: <strong class="text-primary">${{ cartStore.totalPrice.toFixed(2) }}</strong>
           </span>
           <q-space />
-          <q-btn flat dense color="primary" label="Изменить" to="/products" />
+          <q-btn flat dense color="primary" label="Изменить" :to="{ name: 'cart' }" />
         </q-card-section>
       </q-card>
 
@@ -59,18 +58,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import OrderForm from 'components/OrderForm.vue';
-import { useProducts } from 'src/composables/useProducts';
+import { useCartStore } from 'src/stores/cart-store';
 
-// Используем composable для доступа к списку товаров
-const { products } = useProducts();
+const cartStore = useCartStore();
 
-// Для демо: корзина содержит первые 2 товара
-// В реальном приложении данные приходят из store
-const cartItems = computed(() => products.value.slice(0, 2));
-
-const cartTotal = computed(() =>
-  cartItems.value.reduce((sum, p) => sum + p.price, 0),
-);
+// Извлекаем товары из cart store для передачи в OrderForm как props
+const cartItems = computed(() => cartStore.items.map((i) => i.product));
 
 // ============================================================
 // ЧЕРНОВИК — проверяем, есть ли сохранённые данные формы.
@@ -82,7 +75,6 @@ function clearDraft() {
   localStorage.removeItem('otus-pwa-order-form');
   localStorage.removeItem('otus-pwa-order-step');
   hasDraft.value = false;
-  // Перезагружаем страницу чтобы форма сбросилась
   window.location.reload();
 }
 </script>
