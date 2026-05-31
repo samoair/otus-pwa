@@ -1,5 +1,8 @@
 <!--
-  OrderForm.vue — форма заказа (ДЗ 4).
+  OrderForm.vue — форма заказа (ДЗ 4 + ДЗ 6).
+
+  ДЗ 6: данные покупателя подставляются из Pinia user store
+  при авторизации (ФИО, email, телефон, адрес).
 
   Демонстрирует:
   - vee-validate + zod — полноценная валидация формы
@@ -10,6 +13,7 @@
   - async/await — отправка на httpbin.org/post
   - Quasar Notify — уведомление об успешном заказе
   - Quasar Stepper — пошаговое заполнение формы
+  - Pinia store — предзаполнение данных из user store
 
   Типы полей:
   - text (ФИО, город, улица, дом)
@@ -354,6 +358,7 @@ import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import type { OrderFormData, Product } from 'src/services/product/productModels';
 import OrderService from 'src/services/order/orderService';
+import { useUserStore } from 'src/stores/user-store';
 
 // ============================================================
 // PERSISTENCE — сохранение формы в localStorage.
@@ -438,17 +443,27 @@ const orderSchema = z.object({
 // Тип выводится из Zod-схемы — единый источник истины
 type OrderSchemaType = z.infer<typeof orderSchema>;
 
-// Начальные значения: из localStorage если есть, иначе пустые
+// ДЗ 6: данные покупателя из Pinia user store.
+// Если пользователь авторизован — подставляем его ФИО, email, телефон и адрес.
+const userStore = useUserStore();
+
+// Начальные значения: приоритет — localStorage → user store → пустые
 const savedForm = loadForm();
+const userData = userStore.user;
 const orderInitialValues = savedForm
   ? { ...savedForm, agreeTerms: (savedForm.agreeTerms || false) as unknown as true }
   : {
-      fio: '',
-      email: '',
-      phone: '',
+      fio: userData?.name ?? '',
+      email: userData?.email ?? '',
+      phone: userData?.phone ?? '',
       birthDate: '',
       country: '',
-      address: { city: '', street: '', house: '', apartment: '' },
+      address: {
+        city: userData?.address?.city ?? '',
+        street: userData?.address?.street ?? '',
+        house: userData?.address?.house ?? '',
+        apartment: userData?.address?.apartment ?? '',
+      },
       payment: { cardHolder: '', cardNumber: '', expiry: '', cvv: '' },
       agreeTerms: false as unknown as true,
     };
