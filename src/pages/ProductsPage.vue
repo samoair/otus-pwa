@@ -1,9 +1,12 @@
 <!--
-  ProductsPage.vue — ДЗ 3 + ДЗ 4: главная страница магазина.
+  ProductsPage.vue — ДЗ 3 + ДЗ 4 + ДЗ 6: главная страница магазина.
+
+  ДЗ 6: composable useProducts теперь обёртка над Pinia products store.
+  API composable не изменился — компоненты не потребовалось переписывать.
 
   Демонстрирует:
-  - ref, reactive, computed — через composable useProducts
-  - custom hooks — composable для загрузки и фильтрации
+  - ref, reactive, computed — через composable useProducts → Pinia store
+  - custom hooks — composable как thin wrapper над store
   - lifecycle methods — onMounted/onUnmounted внутри useProducts
   - v-for — список товаров
   - v-if — состояния загрузки, ошибки, пустого списка
@@ -199,7 +202,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 import ProductCard from 'components/ProductCard.vue';
 import ProductFormDialog from 'components/ProductFormDialog.vue';
 
@@ -224,7 +227,7 @@ const cartStore = useCartStore();
 
 // Обработчик события от ProductCard (v-on → emit)
 function handleToggleCart(productId: number) {
-  const product = products.value.find((p) => p.id === productId);
+  const product = products.find((p) => p.id === productId);
   if (!product) return;
   if (cartStore.isInCart(productId)) {
     cartStore.removeFromCart(productId);
@@ -245,7 +248,7 @@ function onProductCreated(product: { id?: number; title: string; price: number; 
     image: product.image,
     rating: { rate: 0, count: 0 },
   };
-  products.value.unshift(newProduct);
+  products.unshift(newProduct);
 }
 
 // Опции для сортировки — статический массив (не реактивный)

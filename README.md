@@ -55,6 +55,17 @@ Quasar-приложение на Vite с TypeScript. В `quasar.config.ts` ка�
 - **CartPage** `/cart` — список с +/- quantity, удаление, очистка, ссылка на чекаут
 - **ProductDetailPage** `/products/:id` — полная информация о товаре, хлебные крошки, добавить в корзину
 
+## ДЗ 6: Pinia — стейт-менеджмент
+
+Глобальное состояние через Pinia stores вместо локальных composables:
+
+- **UserStore** (`stores/user-store.ts`) — данные покупателя: `ref()` (user), `computed()` (isAuthenticated, fullName), `actions` (login/logout/updateProfile), `localStorage`-персистентность. Header показывает chip с именем и кнопку logout
+- **ProductsStore** (`stores/products-store.ts`) — каталог: `ref()` (products, loading, error), `reactive()` (фильтры), `computed()` (filteredProducts, categories, totalPrice), `actions` (fetchProducts, resetFilters, addProduct). Логика перенесена из composable
+- **CartStore** (`stores/cart-store.ts`) — корзина (создана в ДЗ 5, подтверждена в ДЗ 6)
+- **useProducts** (`composables/useProducts.ts`) — thin wrapper над ProductsStore для обратной совместимости, компоненты не переписывались
+- **OrderForm** — предзаполнение ФИО/email/телефона/адреса из UserStore при авторизации
+- **LoginPage** — собирает данные покупателя (ФИО, email, телефон), сохраняет в UserStore + localStorage
+
 ## Vapor Mode (живое сравнение)
 
 Страница `/vapor` — реальный бенчмарк VDOM vs Vapor на **Vue 3.6.0-beta.12**:

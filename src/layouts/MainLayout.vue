@@ -4,7 +4,28 @@
       <q-toolbar>
         <q-btn flat dense round icon="menu" aria-label="Меню" @click="toggleLeftDrawer" />
         <q-toolbar-title> OTUS PWA </q-toolbar-title>
-        <q-badge color="white" text-color="primary" class="text-body2"> v{{ version }} </q-badge>
+
+        <!-- ДЗ 6: данные покупателя в хедере — из Pinia user store -->
+        <template v-if="userStore.isAuthenticated">
+          <q-chip icon="person" color="blue-2" text-color="blue-10" dense>
+            {{ userStore.fullName }}
+          </q-chip>
+          <q-btn
+            flat
+            dense
+            round
+            icon="logout"
+            color="grey-7"
+            @click="handleLogout"
+          >
+            <q-tooltip>Выйти</q-tooltip>
+          </q-btn>
+        </template>
+        <template v-else>
+          <q-btn flat dense label="Войти" icon="login" :to="{ name: 'login' }" />
+        </template>
+
+        <q-badge color="white" text-color="primary" class="text-body2 q-ml-sm"> v{{ version }} </q-badge>
       </q-toolbar>
     </q-header>
 
@@ -42,6 +63,19 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useQuasar } from 'quasar';
+import { useUserStore } from 'src/stores/user-store';
+
+const router = useRouter();
+const $q = useQuasar();
+const userStore = useUserStore();
+
+function handleLogout() {
+  userStore.logout();
+  $q.notify({ type: 'info', message: 'Вы вышли из системы' });
+  router.push({ name: 'home' });
+}
 
 // ref(false) — создаёт реактивную переменную.
 // Когда leftDrawerOpen.value меняется, шаблон перерисовывается автоматически.
