@@ -227,7 +227,7 @@ const cartStore = useCartStore();
 
 // Обработчик события от ProductCard (v-on → emit)
 function handleToggleCart(productId: number) {
-  const product = products.find((p) => p.id === productId);
+  const product = products.value.find((p) => p.id === productId);
   if (!product) return;
   if (cartStore.isInCart(productId)) {
     cartStore.removeFromCart(productId);
@@ -248,7 +248,7 @@ function onProductCreated(product: { id?: number; title: string; price: number; 
     image: product.image,
     rating: { rate: 0, count: 0 },
   };
-  products.unshift(newProduct);
+  products.value.unshift(newProduct);
 }
 
 // Опции для сортировки — статический массив (не реактивный)

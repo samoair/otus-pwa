@@ -6,12 +6,23 @@
 //
 // Это демонстрирует эволюцию архитектуры:
 // composable → Pinia store → composable как thin wrapper.
+//
+// ВАЖНО: storeToRefs() обязателен для сохранения реактивности.
+// Без него store.products возвращает обычный массив (captured at setup time),
+// и изменения в store не отображаются в DOM.
 
 import { onMounted, onUnmounted } from 'vue';
+import { storeToRefs } from 'pinia';
 import { useProductsStore } from 'src/stores/products-store';
 
 export function useProducts() {
   const store = useProductsStore();
+
+  // storeToRefs сохраняет реактивность Pinia state/getters при деструктуризации.
+  // Без него return { products: store.products } захватит текущее значение ([])
+  // и компонент не обновится при загрузке данных.
+  const { products, loading, error, filters, categories, filteredProducts, totalPrice } =
+    storeToRefs(store);
 
   // lifecycle — вызываем загрузку при монтировании компонента
   onMounted(() => {
@@ -25,13 +36,13 @@ export function useProducts() {
   });
 
   return {
-    products: store.products,
-    loading: store.loading,
-    error: store.error,
-    filters: store.filters,
-    categories: store.categories,
-    filteredProducts: store.filteredProducts,
-    totalPrice: store.totalPrice,
+    products,
+    loading,
+    error,
+    filters,
+    categories,
+    filteredProducts,
+    totalPrice,
     fetchProducts: store.fetchProducts,
     resetFilters: store.resetFilters,
   };

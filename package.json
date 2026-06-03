@@ -11,7 +11,10 @@
     "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore",
     "dev": "quasar dev",
     "build": "quasar build",
-    "type-check": "vue-tsc --noEmit -p tsconfig.vue-tsc.json"
+    "type-check": "vue-tsc --noEmit -p tsconfig.vue-tsc.json",
+    "test:unit": "vitest",
+    "test:e2e": "playwright test",
+    "test": "npm run test:unit && npm run test:e2e"
   },
   "dependencies": {
     "@quasar/extras": "^1.18.0",
@@ -25,12 +28,19 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@quasar/app-vite": "^2.6.0",
+    "@testing-library/vue": "^8.1.0",
     "@types/node": "^22.10.0",
+    "@vitejs/plugin-vue": "^6.0.7",
+    "@vitest/ui": "^4.1.8",
     "autoprefixer": "^10.4.20",
+    "jsdom": "^29.1.1",
     "prettier": "^3.3.3",
     "typescript": "^5.9.3",
     "vite-plugin-checker": "^0.13.0",
+    "vitest": "^4.1.8",
+    "vitest-mock-extended": "^4.0.0",
     "vue-tsc": "^2.2.12"
   },
   "engines": {
