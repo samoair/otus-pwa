@@ -1,15 +1,22 @@
 // ============================================================
-// routes.ts — маршруты приложения (ДЗ 5: Vue Router).
+// routes.ts — маршруты приложения (ДЗ 5 + ДЗ 9: JWT guards).
 //
-// Демонстрирует:
-// - router params — :id для страницы товара
-// - children routes — admin с дочерними маршрутами
-// - navigation guards — beforeEach для проверки auth
-// - lazy loading — () => import() для code splitting
-// - meta — информация для guards и компонентов
+// ДЗ 9 добавляет:
+// - meta.requiresAuth — проверка JWT в navigation guard
+// - meta.requiresAdmin — проверка role === 'admin' из JWT
+// - /profile — страница профиля (только авторизованные)
+// - /admin/roles — страница только для админов
 // ============================================================
 
 import type { RouteRecordRaw } from 'vue-router';
+
+// Расширяем тип meta для TypeScript
+declare module 'vue-router' {
+  interface RouteMeta {
+    requiresAuth?: boolean;
+    requiresAdmin?: boolean;
+  }
+}
 
 const routes: RouteRecordRaw[] = [
   {
@@ -36,66 +43,62 @@ const routes: RouteRecordRaw[] = [
         name: 'users',
         component: () => import('pages/UsersPage.vue'),
       },
-      // ============================================================
       // Каталог товаров
-      // ============================================================
       {
         path: 'products',
         name: 'products',
         component: () => import('pages/ProductsPage.vue'),
       },
-      // ============================================================
-      // Страница товара — router params
-      // :id — динамический параметр, доступен как route.params.id
-      // Например: /products/1, /products/42
-      // ============================================================
+      // Страница товара — :id param
       {
         path: 'products/:id',
         name: 'product-detail',
         component: () => import('pages/ProductDetailPage.vue'),
         props: true,
       },
-      // ============================================================
       // Корзина
-      // ============================================================
       {
         path: 'cart',
         name: 'cart',
         component: () => import('pages/CartPage.vue'),
       },
-      // ============================================================
       // Оформление заказа
-      // ============================================================
       {
         path: 'order',
         name: 'order',
         component: () => import('pages/OrderPage.vue'),
       },
       // ============================================================
-      // Логин — доступен всем
+      // Логин — ДЗ 9: доступен только НЕ аутентифицированным.
+      // Если JWT есть → guard перенаправит на главную.
       // ============================================================
       {
         path: 'login',
         name: 'login',
         component: () => import('pages/LoginPage.vue'),
       },
-      // ============================================================
-      // GraphQL + WebSocket — ДЗ 8
-      // ============================================================
+      // GraphQL + WebSocket
       {
         path: 'graphql',
         name: 'graphql',
         component: () => import('pages/GraphqlPage.vue'),
       },
       // ============================================================
-      // Админ-раздел — children routes + navigation guard
+      // Профиль — ДЗ 9: только аутентифицированные.
+      // Guard проверяет JWT → если нет/просрочен → /login
+      // ============================================================
+      {
+        path: 'profile',
+        name: 'profile',
+        component: () => import('pages/ProfilePage.vue'),
+        meta: { requiresAuth: true },
+      },
+      // ============================================================
+      // Админ-раздел — meta.requiresAuth + meta.requiresAdmin
       //
-      // children routes: AdminLayout содержит <router-view>,
-      // в который рендерятся дочерние маршруты.
-      //
-      // meta.requiresAuth: флаг для navigation guard (см. ниже).
-      // Guard проверяет localStorage перед входом — если флага
-      // аутентификации нет, перенаправляет на /login.
+      // requiresAuth: проверяет наличие валидного JWT
+      // requiresAdmin: проверяет role === 'admin' из JWT claims
+      // Guard в router/index.ts обрабатывает оба флага.
       // ============================================================
       {
         path: 'admin',
@@ -111,6 +114,16 @@ const routes: RouteRecordRaw[] = [
             path: 'new',
             name: 'admin-new',
             component: () => import('pages/admin/AdminNewProductPage.vue'),
+          },
+          // ============================================================
+          // Управление ролями — ДЗ 9: только admin
+          // meta.requiresAdmin проверяется в router guard
+          // ============================================================
+          {
+            path: 'roles',
+            name: 'admin-roles',
+            component: () => import('pages/admin/AdminRolesPage.vue'),
+            meta: { requiresAdmin: true },
           },
         ],
       },

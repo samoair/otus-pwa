@@ -99,6 +99,17 @@ npm run dev           # дев-сервер
 npm run ws-server     # WebSocket-сервер (отдельный терминал)
 ```
 
+## ДЗ 9: JWT авторизация
+
+Полноценная JWT-авторизация с навигационными guards:
+
+- **AuthService** (`services/auth/authService.ts`) — мок-сервер: `login(username, password)` → JWT. Тестовые аккаунты: `admin/admin123`, `user/user123`. Токен живёт 1 час
+- **AuthStore** (`stores/auth-store.ts`) — Pinia store: `jwtDecode` для чтения claims (sub, username, role, exp), `isAuthenticated`, `isTokenExpired`, `login/logout`, localStorage-персистентность
+- **LoginPage** `/login` — логин/пароль → JWT. Если уже авторизован — redirect на главную. После входа — возврат на целевую страницу (query.redirect)
+- **ProfilePage** `/profile` — только авторизованные: username, role, время выдачи/истечения JWT, decoded payload, кнопка «Выйти»
+- **AdminRolesPage** `/admin/roles` — только admin: `meta.requiresAdmin` проверяет `role === 'admin'` из JWT
+- **Navigation Guards** (`router/index.ts`) — `beforeEach`: 1) JWT просрочен → logout + /login, 2) requiresAuth → проверка JWT, 3) requiresAdmin → проверка role, 4) /login при авторизации → redirect на /
+
 ## Vapor Mode (живое сравнение)
 
 Страница `/vapor` — реальный бенчмарк VDOM vs Vapor на **Vue 3.6.0-beta.12**:
@@ -119,4 +130,4 @@ npm run build      # продакшн-сборка
 
 ## Стек
 
-Vue 3.6.0-beta.12 · Quasar 2 · Vite · TypeScript · Pinia · GraphQL · WebSocket
+Vue 3.6.0-beta.12 · Quasar 2 · Vite · TypeScript · Pinia · GraphQL · WebSocket · JWT

@@ -1,14 +1,17 @@
 <!--
-  LoginPage.vue — форма логина (ДЗ 5-6).
-
-  ДЗ 6: собирает данные покупателя (ФИО, email, телефон)
-  и сохраняет их в Pinia user store + localStorage.
+  LoginPage.vue — форма логина с JWT авторизацией (ДЗ 9).
 
   Демонстрирует:
-  - vee-validate + zod — валидация формы
-  - Pinia store — сохранение данных пользователя
-  - useRouter().push() — навигация после логина
-  - @keyup.enter — отправка формы по Enter
+  - JWT-авторизация — запрос к серверу, получение токена
+  - Navigation guard redirect — возврат на целевую страницу после входа
+  - Pinia store — сохранение JWT в auth-store + localStorage
+  - vee-validate + zod — валидация формы (логин и пароль обязательны)
+  - Защита от повторного входа — аутентифицированный пользователь
+    перенаправляется на главную (в router guard)
+
+  Тестовые аккаунты:
+  - admin / admin123 (роль: admin)
+  - user / user123   (роль: user)
 -->
 <template>
   <q-page padding class="flex flex-center">
@@ -17,64 +20,54 @@
         <q-icon name="lock" size="48px" color="primary" />
         <div class="text-h6 q-mt-sm">Вход в систему</div>
         <div class="text-caption text-grey">
-          Данные сохраняются в Pinia store и localStorage
+          JWT-авторизация · токен хранится в localStorage
         </div>
       </q-card-section>
 
       <q-card-section>
         <Form :validation-schema="loginSchema" @submit="onSubmit">
           <div class="q-gutter-md">
-            <!-- ФИО -->
-            <Field name="name" v-slot="{ errorMessage, value, handleChange, handleBlur }">
+            <!-- Логин -->
+            <Field name="username" v-slot="{ errorMessage, value, handleChange, handleBlur }">
               <q-input
                 :model-value="value"
                 @update:model-value="handleChange"
                 @blur="handleBlur"
-                label="ФИО *"
+                label="Логин *"
                 outlined
                 dense
                 :error="!!errorMessage"
                 :error-message="errorMessage"
+                autocomplete="username"
               >
-                <template v-slot:prepend><q-icon name="badge" /></template>
+                <template v-slot:prepend><q-icon name="person" /></template>
               </q-input>
             </Field>
 
-            <!-- Email -->
-            <Field name="email" v-slot="{ errorMessage, value, handleChange, handleBlur }">
+            <!-- Пароль -->
+            <Field name="password" v-slot="{ errorMessage, value, handleChange, handleBlur }">
               <q-input
                 :model-value="value"
                 @update:model-value="handleChange"
                 @blur="handleBlur"
-                type="email"
-                label="Email *"
+                type="password"
+                label="Пароль *"
                 outlined
                 dense
                 :error="!!errorMessage"
                 :error-message="errorMessage"
+                autocomplete="current-password"
               >
-                <template v-slot:prepend><q-icon name="email" /></template>
-              </q-input>
-            </Field>
-
-            <!-- Телефон -->
-            <Field name="phone" v-slot="{ errorMessage, value, handleChange, handleBlur }">
-              <q-input
-                :model-value="value"
-                @update:model-value="handleChange"
-                @blur="handleBlur"
-                type="tel"
-                label="Телефон"
-                outlined
-                dense
-                mask="+7 (###) ###-##-##"
-                :error="!!errorMessage"
-                :error-message="errorMessage"
-              >
-                <template v-slot:prepend><q-icon name="phone" /></template>
+                <template v-slot:prepend><q-icon name="vpn_key" /></template>
               </q-input>
             </Field>
           </div>
+
+          <!-- Ошибка от сервера -->
+          <q-banner v-if="authStore.error" rounded class="bg-red-1 text-red-9 q-mt-md">
+            <template v-slot:avatar><q-icon name="error" /></template>
+            {{ authStore.error }}
+          </q-banner>
 
           <q-btn
             type="submit"
@@ -82,14 +75,15 @@
             label="Войти"
             class="full-width q-mt-md"
             icon="login"
+            :loading="authStore.loading"
           />
         </Form>
       </q-card-section>
 
       <q-card-section class="text-center text-caption text-grey">
-        Любые данные подойдут — это эмуляция.
-        <br />Данные сохраняются в глобальный стейт (Pinia)
-        <br />и отображаются в шапке приложения.
+        Тестовые аккаунты:
+        <br /><strong>admin</strong> / admin123 (админ)
+        <br /><strong>user</strong> / user123 (пользователь)
       </q-card-section>
     </q-card>
   </q-page>
@@ -100,35 +94,30 @@ import { Form, Field } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
 import { z } from 'zod';
 import { useRoute, useRouter } from 'vue-router';
-import { useQuasar } from 'quasar';
-import { useUserStore } from 'src/stores/user-store';
+import { useAuthStore } from 'src/stores/auth-store';
 
 const loginSchema = toTypedSchema(
   z.object({
-    name: z.string().min(2, 'Введите ФИО'),
-    email: z.string().email('Введите корректный email'),
-    phone: z.string().optional(),
+    username: z.string().min(1, 'Введите логин'),
+    password: z.string().min(1, 'Введите пароль'),
   }),
 );
 
 const route = useRoute();
 const router = useRouter();
-const $q = useQuasar();
-const userStore = useUserStore();
+const authStore = useAuthStore();
 
-function onSubmit(values: Record<string, unknown>) {
-  // ДЗ 6: сохраняем данные покупателя в Pinia store
-  userStore.login({
-    name: values.name as string,
-    email: values.email as string,
-    phone: (values.phone as string) || '',
-    address: { city: '', street: '', house: '' },
-  });
+async function onSubmit(values: Record<string, unknown>) {
+  authStore.clearError();
+  try {
+    await authStore.login(values.username as string, values.password as string);
 
-  $q.notify({ type: 'positive', message: `Добро пожаловать, ${userStore.fullName}!` });
-
-  // Если guard перенаправил с /admin — вернём обратно
-  const redirect = (route.query.redirect as string) || { name: 'home' };
-  router.push(redirect);
+    // После успешного входа — на целевую страницу (если guard перенаправил)
+    // или на главную
+    const redirect = (route.query.redirect as string) || '/';
+    router.push(redirect);
+  } catch {
+    // Ошибка уже в authStore.error
+  }
 }
 </script>

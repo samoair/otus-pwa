@@ -5,11 +5,19 @@
         <q-btn flat dense round icon="menu" aria-label="Меню" @click="toggleLeftDrawer" />
         <q-toolbar-title> OTUS PWA </q-toolbar-title>
 
-        <!-- ДЗ 6: данные покупателя в хедере — из Pinia user store -->
-        <template v-if="userStore.isAuthenticated">
-          <q-chip icon="person" color="blue-2" text-color="blue-10" dense>
-            {{ userStore.fullName }}
-          </q-chip>
+        <!-- ДЗ 9: данные из JWT — auth store -->
+        <template v-if="authStore.isAuthenticated">
+          <q-btn flat dense :to="{ name: 'profile' }">
+            <q-chip
+              :icon="authStore.role === 'admin' ? 'admin_panel_settings' : 'person'"
+              :color="authStore.role === 'admin' ? 'orange-2' : 'blue-2'"
+              :text-color="authStore.role === 'admin' ? 'orange-10' : 'blue-10'"
+              dense
+            >
+              {{ authStore.username }}
+              <q-badge floating color="grey-7" transparent>{{ authStore.role }}</q-badge>
+            </q-chip>
+          </q-btn>
           <q-btn
             flat
             dense
@@ -62,49 +70,50 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
-import { useUserStore } from 'src/stores/user-store';
+import { useAuthStore } from 'src/stores/auth-store';
 
 const router = useRouter();
 const $q = useQuasar();
-const userStore = useUserStore();
+const authStore = useAuthStore();
 
 function handleLogout() {
-  userStore.logout();
+  authStore.logout();
   $q.notify({ type: 'info', message: 'Вы вышли из системы' });
-  router.push({ name: 'home' });
+  router.push({ name: 'login' });
 }
 
-// ref(false) — создаёт реактивную переменную.
-// Когда leftDrawerOpen.value меняется, шаблон перерисовывается автоматически.
-// .value нужно только в <script>, в шаблоне Vue автоматически «разворачивает» ref.
 const leftDrawerOpen = ref(false);
 
 function toggleLeftDrawer() {
-  // .value — способ чтения/записи реактивного значения внутри script setup
   leftDrawerOpen.value = !leftDrawerOpen.value;
 }
 
-// Обычный массив (не реактивный). Он не оборачивается в ref(),
-// потому что его содержимое никогда не меняется после создания.
-// Vue не будет отслеживать изменения этого массива — и это нормально,
-// потому что изменений не будет.
-const navLinks = [
-  { to: '/', label: 'Главная', icon: 'home' },
-  { to: '/products', label: 'Каталог', icon: 'storefront' },
-  { to: '/cart', label: 'Корзина', icon: 'shopping_cart' },
-  { to: '/order', label: 'Заказ', icon: 'shopping_bag' },
-  { to: '/login', label: 'Админ', icon: 'admin_panel_settings' },
-  { to: '/users', label: 'Пользователи', icon: 'people' },
-  { to: '/about', label: 'О проекте', icon: 'info' },
-  { to: '/graphql', label: 'GraphQL', icon: 'api' },
-  { to: '/vapor', label: 'Vapor Mode', icon: 'speed' },
-];
+// Навигация — показываем ссылки в зависимости от роли
+const navLinks = computed(() => {
+  const links = [
+    { to: '/', label: 'Главная', icon: 'home' },
+    { to: '/products', label: 'Каталог', icon: 'storefront' },
+    { to: '/cart', label: 'Корзина', icon: 'shopping_cart' },
+    { to: '/order', label: 'Заказ', icon: 'shopping_bag' },
+    { to: '/users', label: 'Пользователи', icon: 'people' },
+    { to: '/graphql', label: 'GraphQL', icon: 'api' },
+    { to: '/about', label: 'О проекте', icon: 'info' },
+    { to: '/vapor', label: 'Vapor Mode', icon: 'speed' },
+  ];
 
-// process.env.APP_VERSION подставляется на этапе сборки Vite.
-// Значение берётся из quasar.config.ts → build.env.
-// В итоговый бандл попадёт строка '0.0.1', а не обращение к process.env.
+  // Авторизованные — профиль
+  if (authStore.isAuthenticated) {
+    links.push({ to: '/profile', label: 'Профиль', icon: 'account_circle' });
+    links.push({ to: '/admin', label: 'Админ', icon: 'admin_panel_settings' });
+  } else {
+    links.push({ to: '/login', label: 'Войти', icon: 'login' });
+  }
+
+  return links;
+});
+
 const version = process.env.APP_VERSION;
 </script>

@@ -1,17 +1,15 @@
 <!--
-  AdminDashboardPage.vue — главная страница админки (ДЗ 5).
+  AdminDashboardPage.vue — главная страница админки (ДЗ 5 + ДЗ 9).
 
-  Демонстрирует:
-  - Дочерний маршрут (child route) — рендерится внутри AdminLayout
-  - useAuth — проверка состояния аутентификации
-  - router-link — навигация между дочерними маршрутами
+  ДЗ 9: использует JWT auth-store вместо localStorage composable.
+  Navigation guard проверяет JWT перед входом на эту страницу.
 -->
 <template>
   <q-page padding>
     <div class="text-h5 q-mb-md">Панель администратора</div>
 
     <div class="row q-col-gutter-md q-mb-lg">
-      <div class="col-12 col-md-4">
+      <div class="col-12 col-md-3">
         <q-card flat bordered class="text-center">
           <q-card-section>
             <q-icon name="inventory_2" size="48px" color="primary" />
@@ -24,7 +22,20 @@
         </q-card>
       </div>
 
-      <div class="col-12 col-md-4">
+      <div class="col-12 col-md-3">
+        <q-card flat bordered class="text-center">
+          <q-card-section>
+            <q-icon name="admin_panel_settings" size="48px" color="orange" />
+            <div class="text-h6 q-mt-sm">Роли</div>
+            <div class="text-caption text-grey">Управление доступом</div>
+          </q-card-section>
+          <q-card-actions align="center">
+            <q-btn color="orange" label="Роли" :to="{ name: 'admin-roles' }" />
+          </q-card-actions>
+        </q-card>
+      </div>
+
+      <div class="col-12 col-md-3">
         <q-card flat bordered class="text-center">
           <q-card-section>
             <q-icon name="storefront" size="48px" color="positive" />
@@ -37,7 +48,7 @@
         </q-card>
       </div>
 
-      <div class="col-12 col-md-4">
+      <div class="col-12 col-md-3">
         <q-card flat bordered class="text-center">
           <q-card-section>
             <q-icon name="logout" size="48px" color="grey" />
@@ -53,10 +64,11 @@
 
     <q-banner rounded class="bg-teal-1 text-teal-9">
       <template v-slot:avatar><q-icon name="info" /></template>
-      Вы вошли как администратор. Навигационный guard проверяет
-      <code>localStorage</code> перед входом на эту страницу.
-      Попробуйте очистить хранилище и перейти на <code>/admin</code> —
-      вас перенаправит на <code>/login</code>.
+      ДЗ 9: навигационный guard проверяет <strong>JWT</strong>
+      (не localStorage) перед входом на эту страницу.
+      <br />Токен: <code>{{ authStore.token ? 'есть' : 'нет' }}</code>
+      · Роль: <code>{{ authStore.role }}</code>
+      · Истекает: <code>{{ authStore.claims ? new Date(authStore.claims.exp * 1000).toLocaleTimeString('ru-RU') : '—' }}</code>
     </q-banner>
   </q-page>
 </template>
@@ -64,15 +76,15 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
-import { useAuth } from 'src/composables/useAuth';
+import { useAuthStore } from 'src/stores/auth-store';
 
 const router = useRouter();
 const $q = useQuasar();
-const { logout } = useAuth();
+const authStore = useAuthStore();
 
 function handleLogout() {
-  logout();
+  authStore.logout();
   $q.notify({ type: 'info', message: 'Вы вышли из системы' });
-  router.push({ name: 'home' });
+  router.push({ name: 'login' });
 }
 </script>
