@@ -80,6 +80,14 @@ const routes: RouteRecordRaw[] = [
         component: () => import('pages/LoginPage.vue'),
       },
       // ============================================================
+      // GraphQL + WebSocket — ДЗ 8
+      // ============================================================
+      {
+        path: 'graphql',
+        name: 'graphql',
+        component: () => import('pages/GraphqlPage.vue'),
+      },
+      // ============================================================
       // Админ-раздел — children routes + navigation guard
       //
       // children routes: AdminLayout содержит <router-view>,

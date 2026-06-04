@@ -14,12 +14,15 @@
     "type-check": "vue-tsc --noEmit -p tsconfig.vue-tsc.json",
     "test:unit": "vitest",
     "test:e2e": "playwright test",
-    "test": "npm run test:unit && npm run test:e2e"
+    "test": "npm run test:unit && npm run test:e2e",
+    "ws-server": "node server/ws-server.js"
   },
   "dependencies": {
     "@quasar/extras": "^1.18.0",
     "@vee-validate/zod": "^4.15.1",
     "@vue/compiler-sfc": "^3.6.0-beta.12",
+    "graphql": "^16.14.1",
+    "graphql-request": "^7.4.0",
     "pinia": "^2.3.1",
     "quasar": "^2.19.3",
     "vee-validate": "^4.15.1",
@@ -41,7 +44,8 @@
     "vite-plugin-checker": "^0.13.0",
     "vitest": "^4.1.8",
     "vitest-mock-extended": "^4.0.0",
-    "vue-tsc": "^2.2.12"
+    "vue-tsc": "^2.2.12",
+    "ws": "^8.21.0"
   },
   "engines": {
     "node": "^18 || ^22 || ^24",

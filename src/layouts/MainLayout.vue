@@ -99,6 +99,7 @@ const navLinks = [
   { to: '/login', label: 'Админ', icon: 'admin_panel_settings' },
   { to: '/users', label: 'Пользователи', icon: 'people' },
   { to: '/about', label: 'О проекте', icon: 'info' },
+  { to: '/graphql', label: 'GraphQL', icon: 'api' },
   { to: '/vapor', label: 'Vapor Mode', icon: 'speed' },
 ];
 

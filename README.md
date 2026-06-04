@@ -66,6 +66,39 @@ Quasar-приложение на Vite с TypeScript. В `quasar.config.ts` ка�
 - **OrderForm** — предзаполнение ФИО/email/телефона/адреса из UserStore при авторизации
 - **LoginPage** — собирает данные покупателя (ФИО, email, телефон), сохраняет в UserStore + localStorage
 
+## ДЗ 7: Тестирование (Vitest + Playwright)
+
+Юнит-тесты на Vitest и E2E-тесты на Playwright:
+
+- **Unit** (`tests/unit/`) — Vitest + jsdom + @testing-library/vue:
+  - `stores/` — тесты Pinia stores: cart-store (addToCart, quantity, removeFromCart, clearCart), user-store (login/logout, localStorage persistence, updateProfile), products-store (fetchProducts, фильтры, сортировка, computed), counter-store (increment, decrement, history)
+  - `ProductCard.test.ts` — рендеринг, emit событий, отображение данных
+  - Quasar-компоненты замоканы через stubs в `setup.ts`
+- **E2E** (`tests/e2e/`) — Playwright:
+  - `checkout-flow.spec.ts` — полный флоу: login → каталог → корзина → форма заказа. API замоканы через `page.route()`
+
+```bash
+npm run test:unit    # vitest — юнит-тесты (31 тест)
+npm run test:e2e     # playwright — E2E-тесты
+npm run test         # все тесты
+npx vitest --ui      # vitest с UI-панелью
+```
+
+## ДЗ 8: GraphQL API + WebSocket
+
+Страница `/graphql` — данные из Rick and Morty GraphQL API + real-time обновления через WebSocket:
+
+- **graphqlService** (`services/graphql/graphqlService.ts`) — подключение к `rickandmortyapi.com/graphql` через `graphql-request`: запросы с типизацией, переменные, пагинация
+- **GraphQLStore** (`stores/graphql-store.ts`) — Pinia store: загрузка персонажей, пагинация, фильтрация по статусу, обработка WebSocket-событий (status_change, location_change, new_character)
+- **useWebSocket** (`composables/useWebSocket.ts`) — composable над нативным `WebSocket`: автопереподключение, типизация событий, lifecycle-управление
+- **ws-server** (`server/ws-server.js`) — Node.js WebSocket-сервер (ws), отправляет случайные события каждые 4 сек
+- **GraphqlPage** — карточки персонажей, пагинация, фильтры, лог real-time событий
+
+```bash
+npm run dev           # дев-сервер
+npm run ws-server     # WebSocket-сервер (отдельный терминал)
+```
+
 ## Vapor Mode (живое сравнение)
 
 Страница `/vapor` — реальный бенчмарк VDOM vs Vapor на **Vue 3.6.0-beta.12**:
@@ -86,4 +119,4 @@ npm run build      # продакшн-сборка
 
 ## Стек
 
-Vue 3.6.0-beta.12 · Quasar 2 · Vite · TypeScript · Pinia
+Vue 3.6.0-beta.12 · Quasar 2 · Vite · TypeScript · Pinia · GraphQL · WebSocket

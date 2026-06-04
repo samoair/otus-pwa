@@ -1,0 +1,260 @@
+<!--
+  GraphqlPage.vue — ДЗ 8: GraphQL API + WebSocket real-time.
+
+  Демонстрирует:
+  - GraphQL-запросы — загрузка данных из Rick and Morty API
+  - WebSocket — real-time обновления персонажей
+  - Pinia store — глобальное состояние GraphQL-данных
+  - Пагинация — постраничная загрузка
+  - Фильтрация — по статусу (Alive/Dead/unknown)
+-->
+<template>
+  <q-page padding>
+    <div class="row items-center q-mb-md">
+      <div class="text-h4">GraphQL + WebSocket</div>
+      <q-space />
+      <!-- Индикатор WebSocket-подключения -->
+      <q-chip
+        :icon="wsConnected ? 'wifi' : 'wifi_off'"
+        :color="wsConnected ? 'green-2' : 'red-2'"
+        :text-color="wsConnected ? 'green-10' : 'red-10'"
+        dense
+      >
+        WS {{ wsConnected ? 'подключён' : 'отключён' }}
+      </q-chip>
+    </div>
+
+    <!-- Описание -->
+    <q-card flat bordered class="q-mb-md bg-grey-1">
+      <q-card-section>
+        <div class="text-body2 text-grey-8">
+          Данные загружаются из <strong>Rick and Morty GraphQL API</strong>
+          (graphql-request). WebSocket-сервер отправляет real-time события —
+          изменение статуса, перемещение, новых персонажей.
+          <br />
+          Запустите сервер: <code>npm run ws-server</code>
+        </div>
+      </q-card-section>
+    </q-card>
+
+    <!-- Фильтры и пагинация -->
+    <q-card flat bordered class="q-mb-md">
+      <q-card-section>
+        <div class="row q-col-gutter-sm items-end">
+          <!-- Поиск по имени -->
+          <div class="col-12 col-md-3">
+            <q-input
+              v-model="store.nameFilter"
+              dense
+              outlined
+              label="Поиск по имени"
+              clearable
+              @keyup.enter="store.loadCharacters(1)"
+            >
+              <template v-slot:prepend><q-icon name="search" /></template>
+            </q-input>
+          </div>
+
+          <!-- Фильтр по статусу -->
+          <div class="col-12 col-md-2">
+            <q-select
+              v-model="store.statusFilter"
+              :options="['', 'Alive', 'Dead', 'unknown']"
+              dense
+              outlined
+              label="Статус"
+              emit-value
+            >
+              <template v-slot:prepend><q-icon name="filter_list" /></template>
+              <template v-slot:option="scope">
+                <q-item v-bind="scope.itemProps">
+                  <q-item-section>
+                    <q-item-label>{{ scope.opt || 'Все' }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+              </template>
+            </q-select>
+          </div>
+
+          <!-- Статистика -->
+          <div class="col-12 col-md-4">
+            <div class="text-caption text-grey">
+              Всего: <strong>{{ store.totalCount }}</strong>
+              · Alive: <strong class="text-green">{{ store.aliveCount }}</strong>
+              · Dead: <strong class="text-red">{{ store.deadCount }}</strong>
+              · Страница {{ store.currentPage }}/{{ store.totalPages }}
+            </div>
+          </div>
+
+          <!-- Кнопки -->
+          <div class="col-12 col-md-3">
+            <q-btn
+              flat
+              dense
+              color="primary"
+              label="Найти"
+              icon="search"
+              @click="store.loadCharacters(1)"
+              class="q-mr-sm"
+            />
+            <q-btn flat dense color="grey" label="Сбросить" @click="resetAndLoad" />
+          </div>
+        </div>
+      </q-card-section>
+    </q-card>
+
+    <!-- Состояние: загрузка -->
+    <div v-if="store.loading" class="text-center q-pa-xl">
+      <q-spinner-dots size="48px" color="primary" />
+      <div class="text-grey q-mt-md">Загрузка из GraphQL API...</div>
+    </div>
+
+    <!-- Состояние: ошибка -->
+    <q-card v-else-if="store.error" flat bordered class="bg-red-1">
+      <q-card-section class="text-center">
+        <q-icon name="error_outline" size="48px" color="negative" />
+        <div class="text-h6 text-negative q-mt-sm">Ошибка GraphQL</div>
+        <div class="text-body2 text-grey-7">{{ store.error }}</div>
+        <q-btn color="primary" label="Повторить" @click="store.loadCharacters()" class="q-mt-md" />
+      </q-card-section>
+    </q-card>
+
+    <!-- Список персонажей -->
+    <template v-else>
+      <div class="row q-col-gutter-md q-mb-md">
+        <div
+          v-for="char in store.filteredCharacters"
+          :key="char.id"
+          class="col-6 col-sm-4 col-md-3 col-lg-2"
+        >
+          <q-card flat bordered>
+            <q-img :src="char.image" :alt="char.name" ratio="1" />
+            <q-card-section class="q-pa-sm">
+              <div class="text-subtitle2 ellipsis">{{ char.name }}</div>
+              <div class="row items-center q-mt-xs">
+                <q-badge
+                  :color="statusColor(char.status)"
+                  :label="char.status"
+                  dense
+                />
+                <span class="text-caption text-grey q-ml-xs">{{ char.species }}</span>
+              </div>
+              <div class="text-caption text-grey q-mt-xs ellipsis">
+                <q-icon name="place" size="xs" /> {{ char.location.name }}
+              </div>
+            </q-card-section>
+          </q-card>
+        </div>
+      </div>
+
+      <!-- Пагинация -->
+      <div class="row justify-center q-mb-lg">
+        <q-pagination
+          v-model="store.currentPage"
+          :max="store.totalPages"
+          :max-pages="6"
+          direction-links
+          boundary-links
+          @update:model-value="store.loadCharacters"
+        />
+      </div>
+    </template>
+
+    <!-- WebSocket-события — real-time лог -->
+    <q-card flat bordered class="q-mt-md">
+      <q-card-section>
+        <div class="text-subtitle1 text-weight-bold q-mb-sm">
+          <q-icon name="wifi" class="q-mr-xs" /> Real-time события
+          <q-badge color="grey" class="q-ml-sm">{{ store.wsEvents.length }}</q-badge>
+        </div>
+
+        <div v-if="store.wsEvents.length === 0" class="text-caption text-grey">
+          Нет событий. Запустите WebSocket-сервер: <code>npm run ws-server</code>
+        </div>
+
+        <div
+          v-for="(event, idx) in store.wsEvents.slice(0, 10)"
+          :key="idx"
+          class="q-pa-xs q-mb-xs"
+          :class="idx === 0 ? 'bg-blue-1' : ''"
+        >
+          <q-chip
+            dense
+            size="sm"
+            :color="eventTypeColor(event.type)"
+            text-color="white"
+            :label="event.type"
+          />
+          <span class="text-caption">
+            Персонаж #{{ event.characterId }}
+            <template v-if="event.type === 'status_change'">
+              → статус: <strong>{{ event.data.status }}</strong>
+            </template>
+            <template v-else-if="event.type === 'location_change'">
+              → {{ event.data.location?.name }}
+            </template>
+            <template v-else-if="event.type === 'new_character'">
+              → <strong>{{ event.data.name }}</strong>
+            </template>
+          </span>
+          <span class="text-caption text-grey float-right">
+            {{ formatTime(event.timestamp) }}
+          </span>
+        </div>
+      </q-card-section>
+    </q-card>
+  </q-page>
+</template>
+
+<script setup lang="ts">
+import { onMounted } from 'vue';
+import { useGraphQLStore } from 'src/stores/graphql-store';
+import { useWebSocket } from 'src/composables/useWebSocket';
+
+const store = useGraphQLStore();
+
+// ============================================================
+// WebSocket — подключение к серверу для real-time обновлений.
+// Сервер: npm run ws-server (ws://localhost:8080)
+// Если сервер не запущен — wsConnected = false, приложение работает.
+// ============================================================
+const { connected: wsConnected } = useWebSocket({
+  url: 'ws://localhost:8080',
+  onMessage(event) {
+    store.handleWsEvent(event);
+  },
+});
+
+// Загружаем данные при монтировании
+onMounted(() => {
+  if (store.characters.length === 0) {
+    store.loadCharacters();
+  }
+});
+
+function statusColor(status: string) {
+  switch (status) {
+    case 'Alive': return 'green';
+    case 'Dead': return 'red';
+    default: return 'grey';
+  }
+}
+
+function eventTypeColor(type: string) {
+  switch (type) {
+    case 'status_change': return 'orange';
+    case 'location_change': return 'blue';
+    case 'new_character': return 'green';
+    default: return 'grey';
+  }
+}
+
+function formatTime(ts: string) {
+  return new Date(ts).toLocaleTimeString('ru-RU');
+}
+
+function resetAndLoad() {
+  store.resetFilters();
+  store.loadCharacters(1);
+}
+</script>
