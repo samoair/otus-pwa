@@ -155,15 +155,17 @@ const emit = defineEmits<{
 // Zod-схема валидации формы нового товара.
 // toTypedSchema() конвертирует Zod-схему в формат vee-validate.
 // ============================================================
-const productSchema = toTypedSchema(
-  z.object({
-    title: z.string().min(3, 'Минимум 3 символа'),
-    price: z.coerce.number().positive('Цена должна быть > 0'),
-    description: z.string().min(10, 'Минимум 10 символов'),
-    category: z.string().min(1, 'Выберите категорию'),
-    image: z.string().url('Введите корректный URL').or(z.literal('')).optional(),
-  }),
-);
+const productZodSchema = z.object({
+  title: z.string().min(3, 'Минимум 3 символа'),
+  price: z.coerce.number().positive('Цена должна быть > 0'),
+  description: z.string().min(10, 'Минимум 10 символов'),
+  category: z.string().min(1, 'Выберите категорию'),
+  image: z.string().url('Введите корректный URL').or(z.literal('')).optional(),
+});
+
+type ProductFormValues = z.infer<typeof productZodSchema>;
+
+const productSchema = toTypedSchema(productZodSchema);
 
 // Категории для select — из fakestoreapi
 const categoryOptions = [
@@ -178,16 +180,16 @@ const dialogOpen = ref(false);
 const submitting = ref(false);
 
 // Обработчик сабмита — вызывается только после валидации
-async function onSubmit(values: Record<string, unknown>) {
+async function onSubmit(values: ProductFormValues) {
   submitting.value = true;
   try {
     const service = new ProductService();
     const product = await service.create({
-      title: values.title as string,
-      price: values.price as number,
-      description: values.description as string,
-      category: values.category as string,
-      image: (values.image as string) || 'https://via.placeholder.com/150',
+      title: values.title,
+      price: values.price,
+      description: values.description,
+      category: values.category,
+      image: values.image || 'https://via.placeholder.com/150',
     });
     emit('created', product);
     closeDialog();

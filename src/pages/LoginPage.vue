@@ -96,26 +96,26 @@ import { z } from 'zod';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from 'src/stores/auth-store';
 
-const loginSchema = toTypedSchema(
-  z.object({
-    username: z.string().min(1, 'Введите логин'),
-    password: z.string().min(1, 'Введите пароль'),
-  }),
-);
+// Тип выводится из Zod-схемы — единый источник истины
+const loginZodSchema = z.object({
+  username: z.string().min(1, 'Введите логин'),
+  password: z.string().min(1, 'Введите пароль'),
+});
+type LoginForm = z.infer<typeof loginZodSchema>;
+
+const loginSchema = toTypedSchema(loginZodSchema);
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 
-async function onSubmit(values: Record<string, unknown>) {
+async function onSubmit(values: LoginForm) {
   authStore.clearError();
   try {
-    await authStore.login(values.username as string, values.password as string);
+    await authStore.login(values.username, values.password);
 
-    // После успешного входа — на целевую страницу (если guard перенаправил)
-    // или на главную
-    const redirect = (route.query.redirect as string) || '/';
-    router.push(redirect);
+    const redirect = route.query.redirect as string | undefined;
+    router.push(redirect ?? '/');
   } catch {
     // Ошибка уже в authStore.error
   }

@@ -110,6 +110,19 @@ npm run ws-server     # WebSocket-сервер (отдельный термин�
 - **AdminRolesPage** `/admin/roles` — только admin: `meta.requiresAdmin` проверяет `role === 'admin'` из JWT
 - **Navigation Guards** (`router/index.ts`) — `beforeEach`: 1) JWT просрочен → logout + /login, 2) requiresAuth → проверка JWT, 3) requiresAdmin → проверка role, 4) /login при авторизации → redirect на /
 
+## ДЗ 10: TypeScript — строгая типизация
+
+Строгая типизация GraphQL + WebSocket + форм:
+
+- **Типы** (`src/types/global.d.ts`) — централизованные интерфейсы: `CharacterStatus` (union), `CharacterGender`, `CharacterFilter`, `PageInfo`, `NamedLink`, `EpisodeRef`. `WsCharacterEvent` — discriminated union (`WsStatusChangeEvent | WsLocationChangeEvent | WsNewCharacterEvent`), TypeScript сужает тип в `switch` по `event.type`
+- **env.d.ts** — типы `process.env` (APP_VERSION, VUE_ROUTER_MODE и т.д.)
+- **Generic composable** — `useWebSocket<T>` с `validate` type guard и типизированным `send()`. Возвращаемый тип `UseWebSocketReturn<T>`
+- **Zod-inferred types** — `z.infer<typeof schema>` вместо `Record<string, unknown>` в формах (LoginPage, ProductFormDialog, OrderForm, AdminNewProductPage)
+- **Discriminated union** — `handleWsEvent(event)` в GraphQL store: `switch(event.type)` → TypeScript знает тип `event.data` для каждого case
+- **Явные return types** — `UseProductsReturn` для composable, `Promise<void>` для store actions, `QuasarColor`/`WsEventType` для helper-функций
+- **`import type`** — типы не попадают в runtime-бандл
+- **Type guard** — `isWsEvent(data: unknown): data is WsCharacterEvent` для runtime-валидации входящих WS-сообщений
+
 ## Vapor Mode (живое сравнение)
 
 Страница `/vapor` — реальный бенчмарк VDOM vs Vapor на **Vue 3.6.0-beta.12**:

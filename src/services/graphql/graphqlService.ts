@@ -1,19 +1,15 @@
-// GraphQL-сервис — подключение к Rick and Morty API (ДЗ 8).
+// GraphQL-сервис — подключение к Rick and Morty API (ДЗ 8 + ДЗ 10).
 //
-// Демонстрирует:
-// - graphql-request — минимальный GraphQL-клиент
-// - gql — шаблонные строки для запросов
-// - типизация ответов через TypeScript-генерики
-//
-// API: https://rickandmortyapi.com/graphql
-// Альтернативы: SpaceX, Countries, Star Wars — любой публичный GraphQL API.
+// ДЗ 10: строгая типизация:
+// - CharacterFilter вместо Record<string, string>
+// - Типизированный generic в request<T>
+// - Возвращаемый тип Promise<CharactersResponse>
 
 import { request, gql } from 'graphql-request';
-import type { CharactersResponse } from './graphqlModels';
+import type { CharactersResponse, CharacterFilter } from './graphqlModels';
 
 const ENDPOINT = 'https://rickandmortyapi.com/graphql';
 
-/** Запрос списка персонажей с пагинацией */
 const CHARACTERS_QUERY = gql`
   query GetCharacters($page: Int!, $filter: FilterCharacter) {
     characters(page: $page, filter: $filter) {
@@ -39,7 +35,15 @@ const CHARACTERS_QUERY = gql`
   }
 `;
 
-/** Получить список персонажей */
-export async function fetchCharacters(page = 1, filter?: Record<string, string>): Promise<CharactersResponse> {
+/**
+ * Получить список персонажей из GraphQL API.
+ *
+ * @param page - номер страницы (1-based)
+ * @param filter - типизированный фильтр (CharacterFilter вместо Record<string, string>)
+ */
+export async function fetchCharacters(
+  page: number = 1,
+  filter?: CharacterFilter,
+): Promise<CharactersResponse> {
   return request<CharactersResponse>(ENDPOINT, CHARACTERS_QUERY, { page, filter });
 }

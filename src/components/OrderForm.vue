@@ -368,22 +368,11 @@ import { useUserStore } from 'src/stores/user-store';
 const STORAGE_KEY = 'otus-pwa-order-form';
 const STORAGE_STEP_KEY = 'otus-pwa-order-step';
 
-interface SavedForm {
-  fio: string;
-  email: string;
-  phone: string;
-  birthDate: string;
-  country: string;
-  address: { city: string; street: string; house: string; apartment: string };
-  payment: { cardHolder: string; cardNumber: string; expiry: string; cvv: string };
-  agreeTerms: boolean;
-}
-
-function saveForm(values: SavedForm) {
+function saveForm(values: PersistedForm) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(values));
 }
 
-function loadForm(): SavedForm | null {
+function loadForm(): PersistedForm | null {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (!saved) return null;
   try { return JSON.parse(saved); } catch { return null; }
@@ -443,6 +432,10 @@ const orderSchema = z.object({
 // Тип выводится из Zod-схемы — единый источник истины
 type OrderSchemaType = z.infer<typeof orderSchema>;
 
+// Тип для сохранения/восстановления — agreeTerms как boolean (не literal true)
+// localStorage хранит false при незавершённой форме, а схема ожидает true
+type PersistedForm = Omit<OrderSchemaType, 'agreeTerms'> & { agreeTerms: boolean };
+
 // ДЗ 6: данные покупателя из Pinia user store.
 // Если пользователь авторизован — подставляем его ФИО, email, телефон и адрес.
 const userStore = useUserStore();
@@ -451,7 +444,7 @@ const userStore = useUserStore();
 const savedForm = loadForm();
 const userData = userStore.user;
 const orderInitialValues = savedForm
-  ? { ...savedForm, agreeTerms: (savedForm.agreeTerms || false) as unknown as true }
+  ? { ...savedForm, agreeTerms: savedForm.agreeTerms ?? false } as OrderSchemaType
   : {
       fio: userData?.name ?? '',
       email: userData?.email ?? '',
@@ -465,8 +458,8 @@ const orderInitialValues = savedForm
         apartment: userData?.address?.apartment ?? '',
       },
       payment: { cardHolder: '', cardNumber: '', expiry: '', cvv: '' },
-      agreeTerms: false as unknown as true,
-    };
+      agreeTerms: false as boolean as true, // vee-validate: initialValues должно соответствовать схеме
+    } satisfies OrderSchemaType;
 
 // ============================================================
 // useForm — хук vee-validate для управления формой.
@@ -496,7 +489,7 @@ const submitting = ref(false);
 // Даже если пользователь заполнил только шаг 1 и ушёл — данные сохранятся.
 // ============================================================
 watch(values, (v) => {
-  saveForm(v as unknown as SavedForm);
+  saveForm(v as PersistedForm);
 }, { deep: true });
 
 watch(step, (s) => {

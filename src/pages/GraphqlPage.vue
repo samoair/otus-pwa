@@ -1,19 +1,17 @@
 <!--
-  GraphqlPage.vue — ДЗ 8: GraphQL API + WebSocket real-time.
+  GraphqlPage.vue — ДЗ 8 + ДЗ 10: GraphQL API + WebSocket real-time.
 
-  Демонстрирует:
-  - GraphQL-запросы — загрузка данных из Rick and Morty API
-  - WebSocket — real-time обновления персонажей
-  - Pinia store — глобальное состояние GraphQL-данных
-  - Пагинация — постраничная загрузка
-  - Фильтрация — по статусу (Alive/Dead/unknown)
+  ДЗ 10: строгая типизация:
+  - statusColor() принимает CharacterStatus вместо string
+  - eventTypeColor() принимает WsEventType вместо string
+  - useWebSocket<WsCharacterEvent> — generic с type guard
+  - import type — только типы, не попадают в бандл
 -->
 <template>
   <q-page padding>
     <div class="row items-center q-mb-md">
       <div class="text-h4">GraphQL + WebSocket</div>
       <q-space />
-      <!-- Индикатор WebSocket-подключения -->
       <q-chip
         :icon="wsConnected ? 'wifi' : 'wifi_off'"
         :color="wsConnected ? 'green-2' : 'red-2'"
@@ -24,7 +22,6 @@
       </q-chip>
     </div>
 
-    <!-- Описание -->
     <q-card flat bordered class="q-mb-md bg-grey-1">
       <q-card-section>
         <div class="text-body2 text-grey-8">
@@ -41,7 +38,6 @@
     <q-card flat bordered class="q-mb-md">
       <q-card-section>
         <div class="row q-col-gutter-sm items-end">
-          <!-- Поиск по имени -->
           <div class="col-12 col-md-3">
             <q-input
               v-model="store.nameFilter"
@@ -55,11 +51,10 @@
             </q-input>
           </div>
 
-          <!-- Фильтр по статусу -->
           <div class="col-12 col-md-2">
             <q-select
               v-model="store.statusFilter"
-              :options="['', 'Alive', 'Dead', 'unknown']"
+              :options="statusOptions"
               dense
               outlined
               label="Статус"
@@ -76,7 +71,6 @@
             </q-select>
           </div>
 
-          <!-- Статистика -->
           <div class="col-12 col-md-4">
             <div class="text-caption text-grey">
               Всего: <strong>{{ store.totalCount }}</strong>
@@ -86,30 +80,21 @@
             </div>
           </div>
 
-          <!-- Кнопки -->
           <div class="col-12 col-md-3">
-            <q-btn
-              flat
-              dense
-              color="primary"
-              label="Найти"
-              icon="search"
-              @click="store.loadCharacters(1)"
-              class="q-mr-sm"
-            />
+            <q-btn flat dense color="primary" label="Найти" icon="search" @click="store.loadCharacters(1)" class="q-mr-sm" />
             <q-btn flat dense color="grey" label="Сбросить" @click="resetAndLoad" />
           </div>
         </div>
       </q-card-section>
     </q-card>
 
-    <!-- Состояние: загрузка -->
+    <!-- Загрузка -->
     <div v-if="store.loading" class="text-center q-pa-xl">
       <q-spinner-dots size="48px" color="primary" />
       <div class="text-grey q-mt-md">Загрузка из GraphQL API...</div>
     </div>
 
-    <!-- Состояние: ошибка -->
+    <!-- Ошибка -->
     <q-card v-else-if="store.error" flat bordered class="bg-red-1">
       <q-card-section class="text-center">
         <q-icon name="error_outline" size="48px" color="negative" />
@@ -132,11 +117,7 @@
             <q-card-section class="q-pa-sm">
               <div class="text-subtitle2 ellipsis">{{ char.name }}</div>
               <div class="row items-center q-mt-xs">
-                <q-badge
-                  :color="statusColor(char.status)"
-                  :label="char.status"
-                  dense
-                />
+                <q-badge :color="statusColor(char.status)" :label="char.status" dense />
                 <span class="text-caption text-grey q-ml-xs">{{ char.species }}</span>
               </div>
               <div class="text-caption text-grey q-mt-xs ellipsis">
@@ -147,7 +128,6 @@
         </div>
       </div>
 
-      <!-- Пагинация -->
       <div class="row justify-center q-mb-lg">
         <q-pagination
           v-model="store.currentPage"
@@ -160,7 +140,7 @@
       </div>
     </template>
 
-    <!-- WebSocket-события — real-time лог -->
+    <!-- Real-time лог -->
     <q-card flat bordered class="q-mt-md">
       <q-card-section>
         <div class="text-subtitle1 text-weight-bold q-mb-sm">
@@ -187,11 +167,12 @@
           />
           <span class="text-caption">
             Персонаж #{{ event.characterId }}
+            <!-- Discriminated union narrowing — TypeScript знает тип data для каждого type -->
             <template v-if="event.type === 'status_change'">
               → статус: <strong>{{ event.data.status }}</strong>
             </template>
             <template v-else-if="event.type === 'location_change'">
-              → {{ event.data.location?.name }}
+              → {{ event.data.location.name }}
             </template>
             <template v-else-if="event.type === 'new_character'">
               → <strong>{{ event.data.name }}</strong>
@@ -207,32 +188,39 @@
 </template>
 
 <script setup lang="ts">
+// ДЗ 10: import type — типы не попадают в runtime-бандл
 import { onMounted } from 'vue';
+import type { CharacterStatus, WsEventType, QuasarColor } from 'src/services/graphql/graphqlModels';
+import { isWsEvent } from 'src/services/graphql/graphqlModels';
 import { useGraphQLStore } from 'src/stores/graphql-store';
 import { useWebSocket } from 'src/composables/useWebSocket';
 
 const store = useGraphQLStore();
 
+// Типизированные опции для q-select — CharacterStatus union
+const statusOptions: Array<CharacterStatus | ''> = ['', 'Alive', 'Dead', 'unknown'];
+
 // ============================================================
-// WebSocket — подключение к серверу для real-time обновлений.
-// Сервер: npm run ws-server (ws://localhost:8080)
-// Если сервер не запущен — wsConnected = false, приложение работает.
+// WebSocket — generic composable с type guard
+// useWebSocket<WsCharacterEvent> — строгая типизация событий
+// isWsEvent — runtime-валидация входящих данных
 // ============================================================
 const { connected: wsConnected } = useWebSocket({
   url: 'ws://localhost:8080',
+  validate: isWsEvent,
   onMessage(event) {
     store.handleWsEvent(event);
   },
 });
 
-// Загружаем данные при монтировании
 onMounted(() => {
   if (store.characters.length === 0) {
     store.loadCharacters();
   }
 });
 
-function statusColor(status: string) {
+// Строго типизированные функции — параметры — union types, не string
+function statusColor(status: CharacterStatus): QuasarColor {
   switch (status) {
     case 'Alive': return 'green';
     case 'Dead': return 'red';
@@ -240,20 +228,19 @@ function statusColor(status: string) {
   }
 }
 
-function eventTypeColor(type: string) {
+function eventTypeColor(type: WsEventType): QuasarColor {
   switch (type) {
     case 'status_change': return 'orange';
     case 'location_change': return 'blue';
     case 'new_character': return 'green';
-    default: return 'grey';
   }
 }
 
-function formatTime(ts: string) {
+function formatTime(ts: string): string {
   return new Date(ts).toLocaleTimeString('ru-RU');
 }
 
-function resetAndLoad() {
+function resetAndLoad(): void {
   store.resetFilters();
   store.loadCharacters(1);
 }

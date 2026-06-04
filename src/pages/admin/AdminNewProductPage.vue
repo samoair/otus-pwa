@@ -127,15 +127,17 @@ const router = useRouter();
 const $q = useQuasar();
 const submitting = ref(false);
 
-const productSchema = toTypedSchema(
-  z.object({
-    title: z.string().min(3, 'Минимум 3 символа'),
-    price: z.coerce.number().positive('Цена > 0'),
-    description: z.string().min(10, 'Минимум 10 символов'),
-    category: z.string().min(1, 'Выберите категорию'),
-    image: z.string().url('Введите URL').or(z.literal('')).optional(),
-  }),
-);
+const productZodSchema = z.object({
+  title: z.string().min(3, 'Минимум 3 символа'),
+  price: z.coerce.number().positive('Цена > 0'),
+  description: z.string().min(10, 'Минимум 10 символов'),
+  category: z.string().min(1, 'Выберите категорию'),
+  image: z.string().url('Введите URL').or(z.literal('')).optional(),
+});
+
+type ProductFormValues = z.infer<typeof productZodSchema>;
+
+const productSchema = toTypedSchema(productZodSchema);
 
 const categoryOptions = [
   { label: "Мужская одежда", value: "men's clothing" },
@@ -144,16 +146,16 @@ const categoryOptions = [
   { label: "Электроника", value: 'electronics' },
 ];
 
-async function onSubmit(values: Record<string, unknown>) {
+async function onSubmit(values: ProductFormValues) {
   submitting.value = true;
   try {
     const service = new ProductService();
     await service.create({
-      title: values.title as string,
-      price: values.price as number,
-      description: values.description as string,
-      category: values.category as string,
-      image: (values.image as string) || 'https://via.placeholder.com/150',
+      title: values.title,
+      price: values.price,
+      description: values.description,
+      category: values.category,
+      image: values.image || 'https://via.placeholder.com/150',
     });
     $q.notify({ type: 'positive', message: 'Товар создан!' });
     router.push({ name: 'products' });

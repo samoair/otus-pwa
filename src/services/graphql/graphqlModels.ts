@@ -1,30 +1,30 @@
-// Типы данных для Rick and Morty GraphQL API (https://rickandmortyapi.com/graphql).
-// Используем бесплатный публичный API для демонстрации GraphQL в ДЗ 8.
+// Типы данных для GraphQL и WebSocket (ДЗ 8 + ДЗ 10: строгая типизация).
+//
+// ДЗ 10: типы перенесены в src/types/global.d.ts — единый источник истины.
+// Здесь — реэкспорт для удобного импорта из сервисов.
+//
+// Демонстрируемые паттерны TypeScript:
+// - Discriminated union — WsCharacterEvent = A | B | C (type narrowing)
+// - Union types — CharacterStatus, CharacterGender (вместо string)
+// - Pick/Omit — WsNewCharacterEvent использует Pick<CharacterInfo, ...>
+// - Type guard — isWsEvent() для runtime-проверки WS-сообщений
+// - Interface inheritance — WsEventBase → конкретные события
 
-export interface CharacterInfo {
-  id: number;
-  name: string;
-  status: 'Alive' | 'Dead' | 'unknown';
-  species: string;
-  type: string;
-  gender: string;
-  origin: { name: string; url: string };
-  location: { name: string; url: string };
-  image: string;
-  episode: { id: string; name: string }[];
-}
+export type {
+  CharacterStatus,
+  CharacterGender,
+  CharacterInfo,
+  CharactersResponse,
+  CharacterFilter,
+  PageInfo,
+  NamedLink,
+  EpisodeRef,
+  WsCharacterEvent,
+  WsStatusChangeEvent,
+  WsLocationChangeEvent,
+  WsNewCharacterEvent,
+  WsEventType,
+  QuasarColor,
+} from 'src/types/global.d';
 
-export interface CharactersResponse {
-  characters: {
-    info: { count: number; pages: number; next: number | null; prev: number | null };
-    results: CharacterInfo[];
-  };
-}
-
-// События от WebSocket-сервера
-export interface WsCharacterEvent {
-  type: 'status_change' | 'new_character' | 'location_change';
-  characterId: number;
-  data: Partial<CharacterInfo>;
-  timestamp: string;
-}
+export { isWsEvent } from 'src/types/global.d';

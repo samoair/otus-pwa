@@ -52,7 +52,7 @@ export const useUserStore = defineStore('user', () => {
     const saved = localStorage.getItem(USER_STORAGE_KEY);
     if (saved) {
       try {
-        user.value = JSON.parse(saved);
+        user.value = JSON.parse(saved) as UserData;
       } catch {
         localStorage.removeItem(USER_STORAGE_KEY);
       }
